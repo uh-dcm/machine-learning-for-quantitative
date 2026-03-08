@@ -1,0 +1,140 @@
+---
+jupyter:
+  jupytext:
+    text_representation:
+      extension: .Rmd
+      format_name: rmarkdown
+      format_version: '1.2'
+      jupytext_version: 1.19.1
+  kernelspec:
+    display_name: R
+    language: R
+    name: ir
+---
+
+```{r}
+library(caret)
+library(kernlab)
+
+data <- read.csv("./data/daF3077_eng.csv", sep = ";")
+```
+
+## Different algorithms
+
+There are [various algorithms](https://topepo.github.io/caret/train-models-by-tag.html) available to conduct supervised machine learning.
+As they work differently in statistical sense, some of them might work better for your prediction task.
+
+```{r}
+caret_model <- train(
+    v4_1 ~ bv1 + bv2 + bv4,
+    data = data,
+    method = "svmLinear",
+)
+
+summary(caret_model$finalModel)
+```
+
+### Tasks
+
+* Add train-test split and evalute the model on the test set.
+* Try out at least three different algorithms and compare their performance.
+* Which of the algorithms you would use and why?
+
+
+## Model tuning
+
+In addition to various algorithms, each algorithm have parameters which impact how it operates.
+They are in indicated in [the documentation](https://topepo.github.io/caret/train-models-by-tag.html).
+Researchers systematically test different values out to examine what model is the best, i.e., lead to least errors.
+This is called model tuning.
+
+```{r}
+intercept <- c(0, 1, 2, 3, 4)
+```
+
+```{r}
+caret_model <- train(
+    v4_1 ~ bv1 + bv2 + bv4,
+    data = data,
+    method = "lm",
+    tuneGrid = data.frame(intercept = intercept)
+)
+```
+
+```{r}
+caret_model$results
+```
+
+#### Tasks
+
+* Increase the number of values examined for intercept.
+* Which intercept value would you choose?
+
+
+## More parameters to tune
+
+Above the linear model only had one paramter to tune, the intercept.
+Other models can have more versatile set of parameters, leading one to establish of a grid of parameters to tune.
+
+
+```{r}
+library(nnet)
+```
+
+```{r}
+parameters <- expand.grid(
+    size = c(1, 2, 3, 4, 5),
+    decay = c(0.1, 0.01, 0.001)
+)
+
+parameters
+```
+
+```{r}
+caret_model <- train(
+    v4_1 ~ bv1 + bv2 + bv4,
+    data = data,
+    method = "nnet",
+    tuneGrid = parameters
+)
+```
+
+```{r}
+caret_model$results
+```
+
+#### Tasks
+
+* Use a different model and different tuning parameters.
+* Which model would you use
+
+
+## Choosing the model
+
+So we can fit several models on the data, with different parameters and different values.
+How to choose the best one of them?
+Using the `metric` function you can try to inform what is the `finalModel`
+
+```{r}
+caret_model$finalModel
+
+```
+
+```{r}
+caret_model <- train(
+    v4_1 ~ bv1 + bv2 + bv4,
+    data = data,
+    method = "nnet",
+    tuneGrid = parameters,
+    metric = "Rsquared"
+)
+
+caret_model$finalModel
+```
+
+#### Tasks
+
+* Why do these two codes end up with different models?
+
+
+

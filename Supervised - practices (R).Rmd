@@ -1,0 +1,166 @@
+---
+jupyter:
+  jupytext:
+    text_representation:
+      extension: .Rmd
+      format_name: rmarkdown
+      format_version: '1.2'
+      jupytext_version: 1.19.1
+  kernelspec:
+    display_name: R
+    language: R
+    name: ir
+---
+
+```{r}
+data <- read.csv("./data/daF3077_eng.csv", sep = ";")
+head( data )
+```
+
+## Traditional linear regression model
+
+See variable descriptions in [here](https://services.fsd.tuni.fi/catalogue/FSD3077?tab=variables&study_language=en), but a quick summary:
+
+* v4_1 I know which public welfare services and benefits are available in [country] for me and my family
+* bv1 responder gender
+* bv2 responder age
+* bv4 ideology
+
+Building a (poor) model to predict v4_1 from the background variables.
+
+```{r}
+
+model <- lm( v4_1 ~ bv1 + bv2 + bv4, data = data)
+summary( model )
+```
+
+```{r}
+table( data$v4_1 )
+```
+
+### Tasks
+
+* Data contains also value 9 which stands for missing values. Remove it from the analysis.
+* Add more data to the analysis
+
+
+## The same with caret
+
+[Caret](https://topepo.github.io/caret/index.html) is a R-library helping with supervised machine learning.
+The results ought to be about the same.
+However, we do a bit different evaluations on the model, instead of just $R^2$ we also examine mean-square error (as v4_1 is continous).
+
+```{r}
+library(caret)
+library(ggplot2)
+```
+
+```{r}
+caret_model <- train(
+    v4_1 ~ bv1 + bv2 + bv4,
+    data = data,
+    method = "lm",
+)
+
+summary(caret_model$finalModel)
+```
+
+## Model fit
+
+There are various ways to assess models and understand how well they fit to the data, as predictive models often make errors in the analysis.
+One can calculate what is the difference between predicted values by the model and the actual (or: observed) values.
+Various metrics follow this kind of thinking, including
+
+* R2
+* root mean square error (RMSE)
+* mean absolute error (MAE)
+* area under the curve (AUC)
+
+Different research communities have somewhat different approaches on which of these to report.
+
+```{r}
+predicted_values <- predict(caret_model, newdata = data) ## this predicts using the model we just trained values based on the data.
+postResample(pred = predicted_values, obs = data$v4_1)
+
+ggplot( data = data.frame( observed = data$v4_1, predicted = predicted_values), aes(x = observed, y = predicted) ) +
+    geom_point() +
+    theme_minimal() +
+    labs( title = "Observed vs Predicted Values", x = "Observed Values", y = "Predicted Values" )
+```
+
+### Tasks
+
+* What does the figure above tell you about the model fit? Explain to a partner.
+* Draw a plot showing the error and absolute errors per observe values
+
+
+## Train-test split
+
+Instead of using all materials for model training, let use only part of the data and then assess our performance with data not yet seen by the model.
+This avoids overfit.
+
+```{r}
+trainIndex <- createDataPartition(data$v4_1, p = .8, 
+                                  list = FALSE, 
+                                  times = 1)
+
+dataTrain <- data[ trainIndex,]
+dataTest  <- data[-trainIndex,]
+
+## check what the data look like
+
+table( dataTrain$v4_1 )
+table( dataTest$v4_1 )
+```
+
+```{r}
+caret_model <- train(
+    v4_1 ~ bv1 + bv2 + bv4,
+    data = dataTrain,
+    method = "lm",
+)
+
+summary(caret_model$finalModel)
+```
+
+```{r}
+predicted_values <- predict(caret_model, newdata = dataTest) ## this predicts using the model with unused dataTest
+postResample(pred = predicted_values, obs = dataTest$v4_1)
+```
+
+### Tasks
+
+* Try different train-test split ratios
+* How much does the performance drop between train data and test data? What does that tell you?
+
+
+## Cross validation
+
+```{r}
+control <- trainControl(## 10-fold CV
+                           method = "repeatedcv",
+                           number = 10,
+                           ## repeated ten times
+                           repeats = 10)
+```
+
+```{r}
+caret_model <- train(
+    v4_1 ~ bv1 + bv2 + bv4,
+    data = dataTrain,
+    method = "lm",
+    trControl = control
+)
+
+summary(caret_model$finalModel)
+```
+
+```{r}
+predicted_values <- predict(caret_model, newdata = dataTest) ## this predicts using the model with unused dataTest
+postResample(pred = predicted_values, obs = dataTest$v4_1)
+```
+
+### Tasks
+
+* Try different cross-validation rations?
+* How much does the performance increase compared with non-cross-validated model?
