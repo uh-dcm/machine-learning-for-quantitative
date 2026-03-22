@@ -1,0 +1,91 @@
+---
+jupyter:
+  jupytext:
+    text_representation:
+      extension: .Rmd
+      format_name: rmarkdown
+      format_version: '1.2'
+      jupytext_version: 1.19.1
+  kernelspec:
+    display_name: R
+    language: R
+    name: ir
+---
+
+```{r}
+data <- read.csv("./data/daF3077_eng.csv", sep = ";")
+head( data )
+
+## do you need to do cleaning of the data?
+```
+
+## Unsupervised learning
+
+Unsupervised learning focus on working without a target variable.
+The goal is to find patterns in the data, such as clusters of similar observations or associations between variables.
+This means there is no _correct_ outcome like in supervised machine learning, but rather various different outcomes.
+
+We examine how to cluster different welfare needs (`v1_x`) to summarise what kind of groups emerge in the needs.
+
+```{r}
+variables <- c("v1_1", "v1_2", "v1_3", "v1_4", "v1_5", "v1_6")
+```
+
+```{r}
+to_cluster <- data[ , variables ]
+summary( to_cluster )
+```
+
+## $k$-means
+
+To examine this, we try to group responders into groups based on their similarity.
+For this, we use $k$-means method to identifies _centroids_ that summarise the response patterns of participants within each cluster (and assign each responder into one of the clusters).
+(More of this next week.)
+
+```{r}
+clusters <- kmeans(to_cluster, centers = 3)
+```
+
+```{r}
+table(clusters$cluster)
+```
+
+## Analysis
+
+We can examine at the cluster centers, and see their average responses.
+
+```{r}
+aggregate(to_cluster, by = list(cluster = clusters$cluster), mean)
+```
+
+```{r}
+library(factoextra)
+fviz_cluster(clusters, data = to_cluster)
+```
+
+## Tasks
+
+* Vary the number of clusters and for each give some interpretation what is happening.
+* Set seed for the analysis and run the code again. Do you get the same results? Why?
+* Run the analysis 10 times with different random seeds. Are the results somewhat similar?
+
+
+## Choosing the number of clusters
+
+To understand the number of clusters, we can use the "elbow method"
+ We can plot the total within-cluster sum of squares (WSS) against the number of clusters and look for an "elbow" in the plot where the rate of decrease sharply changes.
+
+```{r}
+wss <- sapply(1:20, function(k) kmeans(to_cluster, centers = k)$tot.withinss)
+
+plot(1:20, wss, type = "b", xlab = "Number of clusters", ylab = "Within-cluster variance")
+```
+
+## Tasks
+
+* Use different seends and run the elbow-method again. Do you get the same result?
+* Identify the best number of clusters and conduct the analysis.
+
+```{r}
+
+```
