@@ -1,0 +1,139 @@
+---
+jupyter:
+  jupytext:
+    text_representation:
+      extension: .Rmd
+      format_name: rmarkdown
+      format_version: '1.2'
+      jupytext_version: 1.19.1
+  kernelspec:
+    display_name: R
+    language: R
+    name: ir
+---
+
+```{r}
+data <- read.csv("./data/daF3077_eng.csv", sep = ";")
+head( data )
+
+## do you need to do cleaning of the data?
+```
+
+## Unsupervised learning
+
+Unsupervised learning focus on working without a target variable.
+The goal is to find patterns in the data, such as clusters of similar observations or associations between variables.
+This means there is no _correct_ outcome like in supervised machine learning, but rather various different outcomes.
+
+We examine how to cluster different welfare needs (`v1_x`) to summarise what kind of groups emerge in the needs.
+
+```{r}
+variables <- c("v1_1", "v1_2", "v1_3", "v1_4", "v1_5", "v1_6")
+```
+
+```{r}
+to_cluster <- data[ , variables ]
+summary( to_cluster )
+```
+
+## Clustering
+
+Clustering groups together similar observations from the data.
+
+
+### $k$-means
+
+$k$-means method to identifies _centroids_ that summarise the response patterns of participants within each cluster (and assign each responder into one of the clusters).
+[Documentation](https://www.rdocumentation.org/packages/stats/versions/3.5.2/topics/kmeans)
+
+```{r}
+clusters <- kmeans(to_cluster, centers = 3)
+table(clusters$cluster)
+```
+
+### Hierarcical clustering
+
+Hierarcical clustering operates by separating the data into branches based on similarity.
+[Documentation](https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/hclust)
+
+```{r}
+dist_matrix <- dist(to_cluster)
+clusters <- hclust(dist_matrix, method = "ward.D2")
+plot(clusters)
+```
+
+```{r}
+clusters$clusters <- cutree(clusters, k = 3)
+table( clusters$clusters )
+```
+
+```{r}
+library(dbscan)
+
+clusters <- dbscan( to_cluster, eps = 1, minPts = 50 )
+table( clusters$cluster )
+```
+
+## Tasks
+
+* Check what these different clustering algorithms produce and describe the clusters.
+* Check similarities and differences between clustering outcomes across methods.
+* Vary the number of clusters and seeds to examine the stability of the outcomes.
+
+```{r}
+scaled <- scale( to_cluster )
+
+head( scaled)
+```
+
+## Tasks
+
+* Try out variables which were not all on the same scale.
+How does the results differ on scaled and non-scaled clusters?
+
+
+# Dimension reduction
+
+
+### Principal component analysis
+
+Reduces many correlated variables into a smaller set of components capturing the most variance in the data.
+[Documentation](https://www.rdocumentation.org/packages/stats/versions/3.5.2/topics/prcomp)
+
+```{r}
+components <- prcomp(to_cluster, scale = TRUE)
+```
+
+```{r}
+components$rotation
+biplot(components,choices = c(1,3) )
+```
+
+### UMAP
+
+A nonlinear method that maps high-dimensional data into a low-dimensional space.
+Use `n_components` to change the number of coomponents coming out. [Documentation](https://www.rdocumentation.org/packages/umap/versions/0.2.10.0/topics/umap)
+
+```{r}
+library(umap)
+```
+
+```{r}
+components <- umap( to_cluster, scale = TRUE, n_components = 5 )
+```
+
+```{r}
+head( components$layout)
+plot( components$layout[,1], components$layout[,3] )
+```
+
+## Tasks
+
+* Add to above visualisations different genders and ages from the data.
+* Add to above visualistions clusters from above.
+* Try to interprent different components?
+* Can you find a set of variables where components are more interpretable? 
+* Try using PCA results in a regression model as predictors. Do they perform better than original variables?
+
+
+
