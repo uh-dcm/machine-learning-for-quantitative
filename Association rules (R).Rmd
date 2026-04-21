@@ -1,0 +1,105 @@
+---
+jupyter:
+  jupytext:
+    text_representation:
+      extension: .Rmd
+      format_name: rmarkdown
+      format_version: '1.2'
+      jupytext_version: 1.19.1
+  kernelspec:
+    display_name: R
+    language: R
+    name: ir
+---
+
+## Association rules
+
+Association rules find connections between variables which can be described as rules: if this, then that.
+This and that can be single variables or combinations of variables, but they need to be binary (true/false).
+
+```{r}
+data <- read.csv("./data/daF3077_eng.csv", sep = ";")
+
+summary( data )
+```
+
+```{r}
+variables <- c("v1_1", "v1_2", "v1_3", "v1_4", "v1_5", "v1_6")
+
+to_rules <- data[ , variables ] > 2
+
+head( to_rules)
+summary( to_rules )
+```
+
+## Finding the rules
+
+With this command, potential rules are identified.
+
+```{r}
+library("arules")
+rules <- apriori(to_rules,
+    parameter = list(
+        supp  = 0.001,
+        conf  = 0.01,
+        minlen = 3,
+        maxlen = 10
+    )
+)
+```
+
+## Rules
+
+Rules are of the form: `{v1_1} => {v1_2}`, which means that if `v1_1` is true, then `v1_2` is also likely to be true. 
+The left-hand side of the rule is called the antecedent, and the right-hand side is called the consequent.
+
+```{r}
+inspect(rules)
+```
+
+# Tasks
+
+* Give an interpretnation to the first rule in the output of `inspect(rules)`.
+Share and discuss with a partner.
+
+
+## Metrics: Lift, support, confidence
+
+We were able to create a lot of rules.
+But how do we know which ones are good?
+We can use the following metrics:
+
+* Support: How often does the rule apply to the dataset?
+* Confidence: How often does the rhs happens when the lhs has happened?
+* Lift: does lhs and rhs happen together more often than we would expect if they were independent?
+
+Ideally you would have high support, high confidence and high lift.
+Lift higher than 1 means its already better than random, but the higher the better.
+Confidence and support vary from 0 to 1, the higher the better.
+
+```{r}
+rules <- apriori(to_rules,
+    parameter = list(
+        supp  = 0.01,
+        conf  = 0.2,
+        minlen = 1,
+        maxlen = 10
+    )
+)
+
+inspect(rules, by = "lift")
+```
+
+### Tasks
+
+* What does it mean that the support is overall quite small? You can sort these by support by stating `by = "support"`.
+* What is the highest confidence you can find and what does it mean, provide the rule an interpretation.
+* Use some other variables to find rules which are relevant for social sciences.
+Try to use the rules as a prediction machine, where there is an output variable you try to explain with other variables.
+
+
+For R, also see [visualisation](https://github.com/mhahsler/arulesViz).
+
+```{r}
+
+```

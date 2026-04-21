@@ -14,12 +14,12 @@ jupyter:
 
 ```{r}
 install.packages(
-    c("caret", "kernlab", "nnet", "factoextra", "ggplot2")
+    c("caret", "kernlab", "nnet", "factoextra", "ggplot2", "dbscan", "umap", "arules")
 )
 ```
 
 ```{r}
-!pip install pandas scikit-learn matplotlib statsmodels
+!pip install pandas scikit-learn matplotlib statsmodels umap-learn mlxtend
 ```
 
 ## Data used for the tasks
