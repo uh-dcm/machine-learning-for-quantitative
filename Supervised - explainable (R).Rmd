@@ -1,0 +1,51 @@
+---
+jupyter:
+  jupytext:
+    text_representation:
+      extension: .Rmd
+      format_name: rmarkdown
+      format_version: '1.2'
+      jupytext_version: 1.19.1
+  kernelspec:
+    display_name: R
+    language: R
+    name: ir
+---
+
+```{r}
+library(caret)
+library(kernelshap)
+library(shapviz)
+
+data <- read.csv("./data/daF3077_eng.csv", sep = ";")
+```
+
+```{r}
+caret_model <- train(
+    v4_1 ~ bv1 + bv2 + bv4,
+    data = data,
+    method = "svmLinear",
+)
+
+summary(caret_model$finalModel)
+```
+
+```{r}
+set.seed(10)
+```
+
+```{r}
+xvars <- c("bv1", "bv2", "bv4") ## variables used for training
+
+to_be_examined <- data[sample(nrow(data), 100), xvars]
+```
+
+```{r}
+shap <- permshap(caret_model, to_be_examined)
+```
+
+```{r}
+viz <- shapviz(shap)
+sv_importance(viz)
+sv_dependence(viz, xvars)
+```
